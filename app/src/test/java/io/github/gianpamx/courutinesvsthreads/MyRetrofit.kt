@@ -1,5 +1,7 @@
 package io.github.gianpamx.courutinesvsthreads
 
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Deferred
 import kotlin.concurrent.thread
 
 class MyRetrofit {
@@ -34,6 +36,29 @@ class MyRetrofit {
                 Thread.sleep(millis)
                 callback.onFailure(RuntimeException("Enqueue with failure"))
             }
+        }
+
+        fun execute(): Response {
+            return Response(body = "Hello world")
+        }
+
+        fun adapt(): Deferred<Response> {
+            val deferred = CompletableDeferred<Response>()
+            enqueueWithSuccess(object: Callback {
+                override fun onResponse(response: Response) {
+                    if(response.isSuccessful) {
+                        deferred.complete(response)
+                    } else {
+                        deferred.completeExceptionally(Exception("Failure"))
+                    }
+
+                }
+
+                override fun onFailure(e: Exception) {
+                    deferred.completeExceptionally(e)
+                }
+            })
+            return deferred
         }
     }
 }
